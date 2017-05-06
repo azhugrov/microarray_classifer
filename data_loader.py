@@ -1,6 +1,7 @@
 import re
 import sys
 
+
 def loadExpressionData():
     samples_size = 0  # the number of labeled data samples
     samples_names = []
@@ -13,7 +14,7 @@ def loadExpressionData():
                 header_list = re.split(r'\t', data_row.rstrip('\t'))
                 samples_size = len(header_list) - 1
                 assert samples_size > 1, "number of samples should be greater than one"
-                samples_names = [header_list[i] for i in range(1, len(header_list))]
+                samples_names = [convert_aliquot_barcode_to_sample_barcode(header_list[i].strip()) for i in range(1, len(header_list))]
             else:
                 if len(training_samples) == 0:
                     for sample_index in range(0, samples_size):
@@ -25,7 +26,7 @@ def loadExpressionData():
                     if data_list[sample_index + 1].strip():
                         value = float(data_list[sample_index + 1].strip())
                     else:
-                        value = None
+                        value = 0.0 # for missing data in file
                     training_samples[sample_index].append(value)
             file_line_number += 1
     return (gene_features, samples_names, training_samples)
@@ -48,8 +49,7 @@ def load_labels_data(sameples_names):
             file_line_number += 1
 
     label_by_sample_name_filtered = {}
-    for aliquot_barcode in sameples_names:
-        sample_name = convert_aliquot_barcode_to_sample_barcode(aliquot_barcode)
+    for sample_name in sameples_names:
         if sample_name not in label_by_sample_name_raw:
             raise RuntimeError("BRCA.datafreeze.20120227.txt doesn't have a pam50 label for a sample name={}".format(sample_name))
         else:
