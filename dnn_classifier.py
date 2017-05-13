@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import data_loader
 import sys
+import pickle
 from sklearn.model_selection import train_test_split
 
 tf.logging.set_verbosity(tf.logging.INFO)
@@ -9,17 +10,19 @@ tf.logging.set_verbosity(tf.logging.INFO)
 gene_features, samples_names, expression_samples = data_loader.loadExpressionData()
 pam50_by_sample_name = data_loader.load_labels_data(samples_names)
 classes = ['Basal', 'Her2', 'LumA', 'LumB', 'Normal']
+selected_features = pickle.load(open('selected_features_array.pkl', 'rb'))
 pam50_labels = []
 for sample_name in samples_names:
     pam50_labels.append(pam50_by_sample_name[sample_name])
 
 training_expression_samples, test_expression_samples, training_pam50_labels, test_pam50_labels = train_test_split(expression_samples, pam50_labels, test_size=0.2, random_state=0)
 
-feature_columns = [tf.contrib.layers.real_valued_column(gene) for gene in gene_features]
+# also filter only selected feature column
+feature_columns = [tf.contrib.layers.real_valued_column(gene_features[i]) for i in range(0, len(gene_features)) if selected_features[i]]
 
 # Build 3 layer DNN with 10, 20, 10 units respectively.
 classifier = tf.contrib.learn.DNNClassifier(feature_columns=feature_columns,
-                                            hidden_units=[500],
+                                            hidden_units=[20000, 2000, 1000, 100],
                                             n_classes=5,
                                             model_dir="/tmp/microarray_dnn_1.0")
 

@@ -1,24 +1,34 @@
-import tensorflow as tf
-import numpy as np
 import data_loader
-import sys
+import pickle
 
-x = tf.placeholder(tf.float32, [None, 17815])
+from sklearn.feature_selection import SelectFromModel
+from sklearn.ensemble import ExtraTreesClassifier
 
-W = tf.Variable(tf.zeros([17815, 5]))
-b = tf.Variable(tf.zeros([5]))
+gene_features, samples_names, training_samples = data_loader.loadExpressionData()
+pam50_by_sample_name = data_loader.load_labels_data(samples_names)
 
-with tf.Session() as sess:
-    gene_features, samples_names, training_samples = data_loader.loadExpressionData()
-    sys.stdout.write("Samples size: {} \n".format(len(samples_names)))
-    sys.stdout.write("Gene features size: {} \n".format(len(gene_features)))
-    print "Samples\Genes\t", "\t".join(gene_features)
-    sample_index = 0
-    for sample in training_samples:
-        sys.stdout.write(samples_names[sample_index])
-        sys.stdout.write("\t")
-        for feature_index in range(0, len(gene_features)):
-            sys.stdout.write(str(training_samples[sample_index][feature_index]))
-            sys.stdout.write("\t")
-        sys.stdout.write("\n")
-        sample_index += 1
+labels = []
+for sample_name in samples_names:
+    labels.append(pam50_by_sample_name[sample_name])
+
+selected_features = [True for i in range(0, len(gene_features))]
+
+# We use the base estimator LassoCV since the L1 norm promotes sparsity of features.
+clf = ExtraTreesClassifier()
+clf.fit(training_samples, labels)
+print "feature importancies", clf.feature_importances_
+
+sfm = SelectFromModel(clf, prefit=True, threshold=0.001)
+n_features = sfm.transform(training_samples).shape[1]
+
+# Reset the threshold till the number of features equals two.
+# Note that the attribute can be set directly instead of repeatedly
+# fitting the metatransformer.
+while n_features > 100:
+    sfm.threshold = sfm.threshold * 1.5
+    X_transform = sfm.transform(training_samples)
+    n_features = X_transform.shape[1]
+    selected_features = sfm.get_support(False)
+
+pickle.dump(selected_features, open('selected_features_array.pkl', 'wb'))
+print "Finished the model selection to {} genes.".format(n_features)
