@@ -18,6 +18,10 @@ for sample_name in samples_names:
 training_expression_samples, test_expression_samples, training_pam50_labels, test_pam50_labels = train_test_split(expression_samples, pam50_labels, test_size=0.2, random_state=0)
 
 # also filter only selected feature column
+for i in range(0, len(gene_features)):
+    if selected_features[i]:
+        print gene_features[i]
+
 feature_columns = [tf.contrib.layers.real_valued_column(gene_features[i]) for i in range(0, len(gene_features)) if selected_features[i]]
 
 # Build 3 layer DNN with 10, 20, 10 units respectively.
