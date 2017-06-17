@@ -53,5 +53,4 @@ def get_pam50_list():
         "FGFR4",
         "GRB7",
         "TMEM45B",
-        "ERBB"
-    ]
+        "ERBB2"]
